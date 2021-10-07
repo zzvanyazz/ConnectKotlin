@@ -7,24 +7,23 @@ import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
-class KeyPressingSharer {
+class KeyPressingSharer(private val control: KeyListenerControl) {
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
-    private val DISCONNECTED_KEY = -1;
-    private val pipeName = "\\\\.\\pipe\\registered_keys"
+
     private val connections: Queue<Connection> = ConcurrentLinkedQueue()
-    private var pipe: RandomAccessFile?
     private val isConnected = AtomicBoolean(false)
+    private var pipe: RandomAccessFile? = null
 
     init {
         logger.info("[Key sharing] Starting key listener exe")
         Runtime.getRuntime().exec("KeyListener\\ConsoleListenerBackground.exe")
         logger.info("[Key sharing] Connecting to pipe")
         Thread.sleep(1000)
-        pipe = RandomAccessFile(pipeName, "rw")
+        tryInitPipe()
         Thread(this::read).start()
         logger.info("[Key sharing] Starting reading from pipe")
-        tryInitPipe()
+
     }
 
 
@@ -39,7 +38,8 @@ class KeyPressingSharer {
 
     private fun tryInitPipe() {
         try {
-            pipe = RandomAccessFile(pipeName, "rw")
+            tryClose()
+            pipe = RandomAccessFile("\\\\.\\pipe\\registered_keys", "rw")
             isConnected.set(true)
         } catch (e: Exception) {
             isConnected.set(false)
@@ -56,7 +56,10 @@ class KeyPressingSharer {
                     continue
                 }
                 val key = readKey()
+                if (control.skipRead())
+                    continue
                 assertValid(key)
+                control.onReading()
                 processNewKey(key)
             } catch (e: Exception) {
                 logger.warn("[Key sharing] reading from pipe error", e)
@@ -82,7 +85,7 @@ class KeyPressingSharer {
 
 
     private fun assertValid(key: Int) {
-        if (key == DISCONNECTED_KEY) {
+        if (key == -1) {
             tryClose()
             throw RuntimeException("Pipe is disconnected")
         }
