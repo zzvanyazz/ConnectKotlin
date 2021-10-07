@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="Connect">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../Connect/out/artifacts/Connect_jar/Connect.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
