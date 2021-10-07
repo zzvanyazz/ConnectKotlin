@@ -75,7 +75,7 @@ class KeyPressingSharer(private val control: KeyListenerControl) {
     }
 
     private fun isConnected(): Boolean {
-        return !isConnected.get() && pipe != null
+        return isConnected.get() && pipe != null
     }
 
     private fun readKey() : Int {
